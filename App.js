@@ -17,27 +17,40 @@ const MyComponent = () => {
 
   function PreviewBlindsStructureScreen({ route, navigation }) {
     const { data } = route.params;
+    let list = [];
+
+    let startTime = 0;
+    let initialBlinds = [1, 2];
+
+    for (let x = 0; x < 10; x++)
+    {
+      let level = x + 1;
+      let hour = ((data.duration * level) + startTime);
+      if (hour.toString().length == 1)
+      {
+        hour = "0" + hour;
+      }
+      let time = hour + ":00";
+      let baseBlind = data.interval ** x;
+      let blind1 = baseBlind * initialBlinds[0];
+      let blind2 = baseBlind * initialBlinds[1];
+      let blinds = blind1 + "/" + blind2;
+      let newItem = { Level: level, Time: time, Blinds: blinds };
+      list.push(newItem);
+    }
+
+    let endItem = { Level: '...', Time: ('+' + data.duration + ':00'), Blinds: ('*' + data.interval)}
+    list.push(endItem);
+
     return (
       <View>
-        <DynamicTable data={data} />
+        <DynamicTable data={list} />
       </View>
     );
   }
 
   function HomeScreen({ navigation }) {
-    const data = [
-      { Level: 1, Time: '03:00', Blinds: '1/2' },
-      { level: 2, time: '06:00', blinds: '2/4' },
-      { level: 3, time: '09:00', blinds: '4/8' },
-      { level: 4, time: '12:00', blinds: '8/16' },
-      { level: 5, time: '15:00', blinds: '16/32' },
-      { level: 6, time: '18:00', blinds: '32/64' },
-      { level: 7, time: '21:00', blinds: '64/128' },
-      { level: 8, time: '24:00', blinds: '128/256' },
-      { level: 9, time: '27:00', blinds: '256/512' },
-      { level: 10, time: '30:00', blinds: '512/1024' },
-      { level: '...', time: '+3:00', blinds: '*2' }
-    ]
+    const data = { duration: 3, interval: 2};
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Text>Juan Rafael Rivera</Text>
