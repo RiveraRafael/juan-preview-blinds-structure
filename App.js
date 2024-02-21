@@ -19,18 +19,23 @@ const MyComponent = () => {
     const { data } = route.params;
     let list = [];
 
-    let startTime = 0;
+    let startTime = [ 0, 0 ];
     let initialBlinds = [1, 2];
 
     for (let x = 0; x < 10; x++)
     {
       let level = x + 1;
-      let hour = ((data.duration * level) + startTime);
+      let hour = ((data.duration.hour * level) + startTime[0]);
+      let minute = ((data.duration.minute * level) + startTime[1]);
       if (hour.toString().length == 1)
       {
         hour = "0" + hour;
       }
-      let time = hour + ":00";
+      if (minute.toString().length == 1)
+      {
+        minute = "0" + minute;
+      }
+      let time = hour.toString() + ":" + minute.toString();
       let baseBlind = data.interval ** x;
       let blind1 = baseBlind * initialBlinds[0];
       let blind2 = baseBlind * initialBlinds[1];
@@ -38,8 +43,14 @@ const MyComponent = () => {
       let newItem = { Level: level, Time: time, Blinds: blinds };
       list.push(newItem);
     }
+    let hour = data.duration.hour;
+    let minute = data.duration.minute;
+    if (minute.toString().length == 1)
+    {
+      minute = "0" + minute;
+    }
 
-    let endItem = { Level: '...', Time: ('+' + data.duration + ':00'), Blinds: ('*' + data.interval)}
+    let endItem = { Level: '...', Time: ('+' + hour + ':' + minute), Blinds: ('*' + data.interval)}
     list.push(endItem);
 
     return (
@@ -50,7 +61,7 @@ const MyComponent = () => {
   }
 
   function HomeScreen({ navigation }) {
-    const data = { duration: 3, interval: 2};
+    const data = { duration: { hour: 3, minute: 0 }, interval: 2};
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Text>Juan Rafael Rivera</Text>
