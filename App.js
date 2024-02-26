@@ -6,52 +6,53 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import { Text, Button, View } from 'react-native';
+import React, { useState } from 'react';
+import { Text, Button, View, Slider, StyleSheet, Switch } from 'react-native';
 import DynamicTable from './DynamicTable/DynamicTable';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { styles } from './styles';
+import NavigationButton from './NavigationButton';
+import buildList from './buildList';
+import { changeInterval, blindChangeState } from './blindsSlice';
+import { connect } from 'react-redux';
+import sliderSteps from './sliderSteps';
+
+
+
 const Stack = createStackNavigator();
 
-const MyComponent = () => {
+
+const mapStateToProps = (state) => {
+  return {
+    interval: state.blinds.raiseBlindInterval,
+    switchState: state.blinds.isRaiseBlind,
+    minute: state.blinds.startTimeMinute,
+    second: state.blinds.startTimeSecond,
+    blind1: state.blinds.blind1,
+    blind2: state.blinds.blind2,
+    sliderStep: state.blinds.sliderStep,
+    sliderNumberOfSteps: state.blinds.sliderNumberOfSteps
+  };
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    changeInterval: (text) => dispatch(changeInterval(text)),
+    blindChangeState: () => dispatch(blindChangeState())
+  };
+}
+
+const MyComponent = (props) => {
 
   function PreviewBlindsStructureScreen({ route, navigation }) {
-    const { data } = route.params;
-    let list = [];
-
-    let startTime = [ 0, 0 ];
-    let initialBlinds = [1, 2];
-
-    for (let x = 0; x < 10; x++)
-    {
-      let level = x + 1;
-      let hour = ((data.duration.hour * level) + startTime[0]);
-      let minute = ((data.duration.minute * level) + startTime[1]);
-      if (hour.toString().length == 1)
-      {
-        hour = "0" + hour;
-      }
-      if (minute.toString().length == 1)
-      {
-        minute = "0" + minute;
-      }
-      let time = hour.toString() + ":" + minute.toString();
-      let baseBlind = data.interval ** x;
-      let blind1 = baseBlind * initialBlinds[0];
-      let blind2 = baseBlind * initialBlinds[1];
-      let blinds = blind1 + "/" + blind2;
-      let newItem = { Level: level, Time: time, Blinds: blinds };
-      list.push(newItem);
+    const data = {
+      duration: { minute: props.interval, second: 0 },
+      interval: (props.switchState ? 2 : 1),
+      startTime: { minute: props.minute, second: props.second },
+      blinds: { blind1: props.blind1, blind2: props.blind2 }
     }
-    let hour = data.duration.hour;
-    let minute = data.duration.minute;
-    if (minute.toString().length == 1)
-    {
-      minute = "0" + minute;
-    }
-
-    let endItem = { Level: '...', Time: ('+' + hour + ':' + minute), Blinds: ('*' + data.interval)}
-    list.push(endItem);
+    const list = buildList(data);
 
     return (
       <View>
@@ -61,16 +62,65 @@ const MyComponent = () => {
   }
 
   function HomeScreen({ navigation }) {
-    const data = { duration: { hour: 3, minute: 0 }, interval: 2};
+    const sliderStepsProps = {
+      timeStart: props.minute,
+      timeStep: props.sliderStep,
+      timeNumberOfSteps: props.sliderNumberOfSteps,
+      switchState: props.switchState
+    }
+    console.log(sliderStepsProps)
+    const data = sliderSteps(sliderStepsProps)
+    console.log(data)
+    const handleSliderChange = (value) => {
+      props.changeInterval(value);
+    };
+
+    const handleSwitchChange = () => {
+      props.blindChangeState();
+    }
+
+    const ButtonHandler = () => {
+      navigation.navigate('PreviewBlindsStructure', { data: data })
+    }
+
+    const ButtonProps = {
+      label:"Preview Blinds Structure",
+      onPress: ButtonHandler
+    }
+
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-        <Text>Juan Rafael Rivera</Text>
-        <Text style={{ marginBottom: 10 }}>Preview Blinds Structure</Text>
-        <Button
-          title="Preview Blinds Structure"
-          onPress={() => navigation.navigate('PreviewBlindsStructure', 
-          { data: data })}
-        />
+      <View style={styles.home}>
+        <View style={styles.sliderBox}>
+          <View style={styles.switchContainer}>
+            <View style={styles.switchContents}>
+              <Text>Blind Level Length</Text>
+            </View>
+            <View style={styles.switchContent}>
+              <Switch 
+                value={props.switchState}
+                onValueChange={handleSwitchChange}
+              />
+            </View>
+          </View>
+          <View style={styles.stepContainer}>
+            {data.timeStepList.map((line, index) => (
+            <Text key={index} style={styles.stepText}>{line}</Text>
+            ))}
+          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={sliderStepsProps.timeStart}
+            maximumValue={data.maxTime}
+            step={sliderStepsProps.timeStep}
+            value={props.interval}
+            onValueChange={handleSliderChange}
+            minimumTrackTintColor="#00FF00"
+            maximumTrackTintColor="#000000"
+            thumbTintColor="#0000FF"
+          />
+          <Text>{props.interval}</Text>
+          <NavigationButton {...ButtonProps} />
+        </View>
       </View>
     );
   }  
@@ -85,4 +135,4 @@ const MyComponent = () => {
   );
 };
 
-export default MyComponent;
+export default connect(mapStateToProps, mapDispatchToProps)(MyComponent);
